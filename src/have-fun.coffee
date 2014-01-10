@@ -16,6 +16,15 @@ exports.singleToArray = (fun, inputIndex = 0, callbackIndex = -1) ->
 
     async.map(args[inputIndex], fun, args[callbackIndex])
 
+exports.singleToArrayOrSingle = (fun, inputIndex = 0, callbackIndex = -1) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    inputIndex = negativeIndex(inputIndex, args)
+    callbackIndex = negativeIndex(callbackIndex, args)
+
+    input = if _.isArray(args[inputIndex]) then args[inputIndex] else [ args[inputIndex] ]
+    async.map(input, fun, args[callbackIndex])
+
 
 exports.input.stringToFilePath = (fun, readFileOptions = { encoding: 'utf-8' }, inputIndex = 0, callbackIndex = -1) ->
   () ->

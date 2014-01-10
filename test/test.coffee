@@ -29,6 +29,27 @@ describe 'have-funs', ->
         expect(err).to.equal("someerror")
         done()
 
+  describe 'singleToArrayOrSingle()', ->
+
+    it 'transforms a function which receives and outputs a single element into one which can also receive array', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, cb) -> cb(null, vals[i])
+      transformed = haveFun.singleToArrayOrSingle(f)
+      transformed [1,2,0], (err, results) ->
+        expect(err).to.be.not.ok
+        expect(results).to.eql(['b', 'c', 'a'])
+        done()
+
+    it 'allows the function to still receive a single element. the output will be an array of length 1', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, cb) -> cb(null, vals[i])
+      transformed = haveFun.singleToArrayOrSingle(f)
+      transformed 2, (err, results) ->
+        expect(err).to.be.not.ok
+        expect(results).to.eql(['c'])
+        done()
+
+
   describe 'input.stringToFilePath()', ->
 
     it 'transforms a function receiving a string to one receiving a file path to read', (done) ->

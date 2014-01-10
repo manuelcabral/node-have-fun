@@ -79,6 +79,12 @@ One could event start with another primitive, such as a transform string:
     // f(input, function(err, result))
     // f([ input ], function(err, [ result ]))
 
+    singleToArrayOrSingle
+    // transforms a function which receives and outputs a single element into one which can also receive array (but also a single element)
+    // if the input argument is an array, it will be interpreted as an array of elements. otherwise, it will be interpreted as a single element
+    // the output of the function will always be an array
+
+
     input.flatten(fun, inputIndex = 0) // Flattens the input list before executing the function
     // Useful to be able to use a list of globs
 
