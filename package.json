@@ -1,0 +1,27 @@
+{
+  "name": "have-funs",
+  "version": "0.0.0",
+  "description": "Functions that change other functions' interface",
+  "main": "src/have-funs.coffee",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha test"
+  },
+  "keywords": [
+    "composition",
+    "adapter",
+    "wrapper"
+  ],
+  "author": "Manuel Cabral (m.cabral@digisfera.pt)",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "coffee-script": "~1.6.3",
+    "lodash": "~2.4.1"
+  },
+  "devDependencies": {
+    "chai": "~1.8.1",
+    "mocha": "~1.17.0"
+  }
+}
