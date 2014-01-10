@@ -1,6 +1,7 @@
 async = require('async')
 fs = require('fs')
 glob = require('glob')
+_ = require('lodash')
 
 exports.input = {}
 exports.output = {}
@@ -38,3 +39,10 @@ exports.input.filePathsToGlob = (fun, globOptions, inputIndex = 0, callbackIndex
       if err? then return args[callbackIndex](err)
       args[inputIndex] = filePaths
       fun.apply(null, args)
+
+exports.input.flatten = (fun, inputIndex = 0) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    inputIndex = negativeIndex(inputIndex, args)
+    args[inputIndex] = _.flatten(args[inputIndex])
+    fun.apply(null, args)

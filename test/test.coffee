@@ -1,5 +1,6 @@
 expect = require('chai').expect
 path = require('path')
+sinon = require('sinon')
 haveFun = require("../src/have-fun")
 
 
@@ -85,3 +86,10 @@ describe 'have-funs', ->
         expect(result).to.eql([])
         done()
 
+  describe 'input.flatten()', ->
+
+    it 'flattens the input before calling the function', ->
+      f = sinon.spy()
+      transformed = haveFun.input.flatten(f)
+      transformed([[1,2],[3,4]])
+      expect(f.firstCall.args[0]).to.eql([1,2,3,4])
