@@ -4,6 +4,7 @@ sinon = require('sinon')
 fs = require('fs')
 haveFun = require("../src/have-fun")
 
+delay = (t, f) -> setTimeout(f, t)
 
 describe 'have-funs', ->
 
@@ -11,7 +12,23 @@ describe 'have-funs', ->
 
   describe 'syncToAsync()', ->
 
-    it 'should transform a synchronous function into an asynchronous one'
+    it 'should transform a synchronous function into an asynchronous one', (done) ->
+      spy = sinon.spy()
+      f = haveFun.syncToAsync(spy)
+      f (err, result) ->
+        expect(err).to.be.not.ok
+
+      expect(spy.callCount).to.equal(0)
+      delay 10, ->
+        expect(spy.callCount).to.equal(1)
+        done()
+
+    it 'should return error when throwing', (done) ->
+      f = haveFun.syncToAsync( (-> throw "error") )
+      f (err, result) ->
+        expect(err).to.equal("error")
+        done()
+
 
   describe 'singleToArray()', ->
 

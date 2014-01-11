@@ -10,6 +10,19 @@ exports.output = {}
 
 negativeIndex = (i, arr) -> if i >= 0 then i else arr.length + i
 
+exports.syncToAsync = (fun, callbackIndex = -1) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    callbackIndex = negativeIndex(callbackIndex, args)
+
+    async.nextTick ->
+      try
+        fun.apply(null, arguments)
+      catch e
+        args[callbackIndex](e)
+
+
+
 exports.singleToArray = (fun, inputIndex = 0, callbackIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
