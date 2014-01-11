@@ -164,7 +164,12 @@ describe 'have-funs', ->
       transformed('testpath.txt', nameGenerator)
       expect(f.firstCall.args[1]).to.equal('output/testpath.txt')
         
+  describe 'output.filePathAppendExtension()', ->
 
-
+    it 'transforms function into one with an extension appended to a file path to write', () ->
+      f = sinon.spy()
+      transformed = haveFun.output.filePathAppendExtension(f, 'js')
+      transformed('input.coffee', 'output')
+      expect(f.firstCall.args[1]).to.equal('output.js')
 
 

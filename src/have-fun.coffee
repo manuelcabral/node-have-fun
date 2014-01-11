@@ -85,7 +85,14 @@ exports.output.filePathToGenerated = (fun, inputIndex = 0, outputIndex = 1) ->
     args = Array.prototype.slice.call(arguments)
     inputIndex = negativeIndex(inputIndex, args)
     outputIndex = negativeIndex(outputIndex, args)
-    callbackIndex = negativeIndex(callbackIndex, args)
 
     args[outputIndex] = args[outputIndex](args[inputIndex])
-    fun.apply(null, args)    
+    fun.apply(null, args)
+
+exports.output.filePathAppendExtension = (fun, extension, outputIndex = 1) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    outputIndex = negativeIndex(outputIndex, args)
+
+    args[outputIndex] = args[outputIndex] + '.' + extension
+    fun.apply(null, args)  
