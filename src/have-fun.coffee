@@ -1,6 +1,8 @@
 async = require('async')
 fs = require('fs')
 glob = require('glob')
+mkdirp = require('mkdirp')
+path = require('path')
 _ = require('lodash')
 
 exports.input = {}
@@ -49,9 +51,41 @@ exports.input.filePathsToGlob = (fun, globOptions, inputIndex = 0, callbackIndex
       args[inputIndex] = filePaths
       fun.apply(null, args)
 
+
 exports.input.flatten = (fun, inputIndex = 0) ->
   () ->
     args = Array.prototype.slice.call(arguments)
     inputIndex = negativeIndex(inputIndex, args)
     args[inputIndex] = _.flatten(args[inputIndex])
     fun.apply(null, args)
+
+exports.output.stringToFilePath = (fun, writeFileOptions, outputIndex = 1, callbackIndex = -1) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    outputIndex = negativeIndex(outputIndex, args)
+    callbackIndex = negativeIndex(callbackIndex, args)
+
+    outFile = args[outputIndex]
+    callback = args[callbackIndex]
+
+    args[callbackIndex] = (err, result) ->
+      mkdirp path.dirname(outFile), (err) ->
+        if err then return callback(err)
+        fs.writeFile outFile, result, writeFileOptions, (err) ->
+          if err then return callback(err)
+          callback(null, outFile)
+
+    #Call original function with new arguments
+    args.splice(outputIndex, 1)
+    fun.apply(null, args)
+
+
+exports.output.filePathToGenerated = (fun, inputIndex = 0, outputIndex = 1) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    inputIndex = negativeIndex(inputIndex, args)
+    outputIndex = negativeIndex(outputIndex, args)
+    callbackIndex = negativeIndex(callbackIndex, args)
+
+    args[outputIndex] = args[outputIndex](args[inputIndex])
+    fun.apply(null, args)    

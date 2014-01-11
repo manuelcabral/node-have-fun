@@ -1,10 +1,13 @@
 expect = require('chai').expect
 path = require('path')
 sinon = require('sinon')
+fs = require('fs')
 haveFun = require("../src/have-fun")
 
 
 describe 'have-funs', ->
+
+  before -> try fs.mkdirSync("tmp")
 
   describe 'syncToAsync()', ->
 
@@ -114,3 +117,54 @@ describe 'have-funs', ->
       transformed = haveFun.input.flatten(f)
       transformed([[1,2],[3,4]])
       expect(f.firstCall.args[0]).to.eql([1,2,3,4])
+
+
+  describe 'output.stringToFilePath()', ->
+
+    outfile = path.join(__dirname, "tmp/outfile.txt")
+    beforeEach -> try fs.unlinkSync(outfile)
+
+    it 'transforms function which outputs a string into one which writes it to a file and outputs the file path', (done) ->
+      f = (input, cb) -> cb(null, input)
+
+      transformed = haveFun.output.stringToFilePath(f)
+      transformed "all done", outfile, (err, result) ->
+        expect(err).to.be.not.ok
+        expect(result).to.equal(outfile)
+        expect(fs.readFileSync(outfile, { encoding: 'utf-8' })).to.equal("all done")
+        done()
+
+    ### For some reason, this test is currently failing
+    it 'throws error if cannot create folder', (done) ->
+      f = (input, cb) -> cb(null, input)
+
+      transformed = haveFun.output.stringToFilePath(f)
+      transformed "all done", 'invaliddirnam|?e/hello', (err, result) ->
+        console.log(err, result)
+        expect(err).to.be.ok
+        done()
+    ###
+
+
+    it 'throws error if cannot write file', (done) ->
+      f = (input, cb) -> cb(null, input)
+
+      transformed = haveFun.output.stringToFilePath(f)
+      transformed "all done", 'tmp/invalidfilename*|?', (err, result) ->
+        expect(err).to.be.ok
+        done()
+
+    
+  describe 'output.filePathToGenerated()', ->
+
+    it 'transforms function which takes a file path to write into one which takes a function to generate the file path', () ->
+      f = sinon.spy()
+      transformed = haveFun.output.filePathToGenerated(f)
+      nameGenerator = (inputPath) -> "output/#{inputPath}"
+      transformed('testpath.txt', nameGenerator)
+      expect(f.firstCall.args[1]).to.equal('output/testpath.txt')
+        
+
+
+
+

@@ -18,7 +18,8 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "coffee-script": "~1.6.3",
-    "lodash": "~2.4.1"
+    "lodash": "~2.4.1",
+    "mkdirp": "~0.3.5"
   },
   "devDependencies": {
     "chai": "~1.8.1",
