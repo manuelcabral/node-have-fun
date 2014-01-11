@@ -14,7 +14,8 @@ exports.syncToAsync = (fun, callbackIndex = -1) ->
 
     async.nextTick ->
       try
-        fun.apply(null, arguments)
+        result = fun.apply(null, args)
+        args[callbackIndex](null, result)
       catch e
         args[callbackIndex](e)
 
@@ -76,11 +77,28 @@ exports.readFilesToGlob = (fun, globOptions, argIndex = 0, callbackIndex = -1) -
       fun.apply(null, args)
 
 
-exports.flatten = (fun, argIndex = 0) ->
+globs = exports.singleToArrayOptional(glob)
+
+exports.readFilesToGlobs = (fun, globOptions, argIndex = 0, callbackIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
     argIndex = negativeIndex(argIndex, args)
-    args[argIndex] = _.flatten(args[argIndex])
+    callbackIndex = negativeIndex(callbackIndex, args)
+
+    globs args[argIndex], globOptions, (err, filePaths) ->
+      if err? then return args[callbackIndex](err)
+      if _.isArray(filePaths) then filePaths = _.flatten(filePaths)
+      filePaths = _.uniq(filePaths)
+      args[argIndex] = filePaths
+      fun.apply(null, args)
+
+
+exports.flattenArray = (fun, argIndex = 0) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    argIndex = negativeIndex(argIndex, args)
+    if _.isArray(args[argIndex])
+      args[argIndex] = _.flatten(args[argIndex])
     fun.apply(null, args)
 
 exports.addArg = (fun, argIndex = -1) ->

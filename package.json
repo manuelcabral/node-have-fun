@@ -1,8 +1,8 @@
 {
-  "name": "have-funs",
+  "name": "have-fun",
   "version": "0.0.0",
   "description": "Functions that change other functions' interface",
-  "main": "src/have-funs.coffee",
+  "main": "src/have-fun.coffee",
   "directories": {
     "test": "test"
   },

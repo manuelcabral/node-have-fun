@@ -171,13 +171,48 @@ describe 'have-funs', ->
         expect(result).to.eql([])
         done()
 
-  describe 'flatten()', ->
+  describe 'readFileToGlobs()', ->
 
-    it 'flattens the argument before calling the function', ->
+    f = haveFun.singleToArray(haveFun.stringToReadFile((x, cb) -> cb(null, x.toUpperCase())))
+
+    it 'transforms a function receiving a list of file paths into one receiving a list of globs', (done) ->
+      transformed = haveFun.readFilesToGlobs(f)
+
+      transformed [ path.join(__dirname,'files/*globtest1*'), path.join(__dirname,'files/*globtest2*') ], (err, result) ->
+        expect(err).to.be.not.ok
+        expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
+        done()
+
+    it 'can still receive a single glob', (done) ->
+      transformed = haveFun.readFilesToGlobs(f)
+
+      transformed path.join(__dirname,'files/*globtest*'), (err, result) ->
+        expect(err).to.be.not.ok
+        expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
+        done()
+
+
+    it 'should only process each file once when it is matched by two globs', (done) ->
+      transformed = haveFun.readFilesToGlobs(f)
+
+      transformed [ path.join(__dirname,'files/*globtest*'), path.join(__dirname,'files/*globtest2*') ], (err, result) ->
+        expect(err).to.be.not.ok
+        expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
+        done()
+
+  describe 'flattenArray()', ->
+
+    it 'flattens the array argument before calling the function', ->
       f = sinon.spy()
-      transformed = haveFun.flatten(f)
+      transformed = haveFun.flattenArray(f)
       transformed([[1,2],[3,4]])
       expect(f.firstCall.args[0]).to.eql([1,2,3,4])
+
+    it 'should not flatten strings', ->
+      f = sinon.spy()
+      transformed = haveFun.flattenArray(f)
+      transformed("hello")
+      expect(f.firstCall.args[0]).to.eql("hello")
 
 
   describe 'addArg()', ->
