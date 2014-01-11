@@ -71,6 +71,19 @@ One could event start with another primitive, such as a transform string:
 
 ## Api
 
+    syncToAsync = (fun, callbackIndex = -1)
+    singleToArray = (fun, inputIndex = 0, callbackIndex = -1)
+    singleToArrayOrSingle = (fun, inputIndex = 0, callbackIndex = -1)
+    stringToReadFile = (fun, readFileOptions = { encoding: 'utf-8' }, argIndex = 0, callbackIndex = -1)
+    readFilesToGlob = (fun, globOptions, argIndex = 0, callbackIndex = -1)
+    flatten = (fun, argIndex = 0)
+    addArg = (fun, argIndex = -1)
+    stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, callbackIndex = -1)
+    stringToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0)
+    appendExtension = (fun, extension, argIndex = 1)
+    filePathToDirPath = (fun, argIndex = 1, inputFilePathIndex = 0)
+
+
     syncToAsync(fun, callbackIndex = -1) // indexes < 0 count from the end
     // result = f(input)
     // f(input, function(err, result)) // Exceptions are passed in `err`

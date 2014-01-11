@@ -5,9 +5,6 @@ mkdirp = require('mkdirp')
 path = require('path')
 _ = require('lodash')
 
-exports.input = {}
-exports.output = {}
-
 negativeIndex = (i, arr) -> if i >= 0 then i else arr.length + i
 
 exports.syncToAsync = (fun, callbackIndex = -1) ->
@@ -23,68 +20,79 @@ exports.syncToAsync = (fun, callbackIndex = -1) ->
 
 
 
-exports.singleToArray = (fun, inputIndex = 0, callbackIndex = -1) ->
+exports.singleToArray = (fun, argIndex = 0, callbackIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
+    argIndex = negativeIndex(argIndex, args)
     callbackIndex = negativeIndex(callbackIndex, args)
 
     argsForCall = _.clone(args)
     callFunWithArgs = (input, callback) ->
-      argsForCall[inputIndex] = input
+      argsForCall[argIndex] = input
       argsForCall[callbackIndex] = callback
       fun.apply(null, argsForCall)
 
-    async.map(args[inputIndex], callFunWithArgs, args[callbackIndex])
+    async.map(args[argIndex], callFunWithArgs, args[callbackIndex])
 
-exports.singleToArrayOrSingle = (fun, inputIndex = 0, callbackIndex = -1) ->
+exports.singleToArrayOrSingle = (fun, argIndex = 0, callbackIndex = -1) ->
+  funWithArrayArg = exports.singleToArray(fun, argIndex, callbackIndex)
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
-    callbackIndex = negativeIndex(callbackIndex, args)
+    argIndex = negativeIndex(argIndex, args)
 
-    input = if _.isArray(args[inputIndex]) then args[inputIndex] else [ args[inputIndex] ]
-    async.map(input, fun, args[callbackIndex])
+    funToApply = if _.isArray(args[argIndex]) then funWithArrayArg else fun
+    funToApply.apply(null, args)
 
 
-exports.input.stringToFilePath = (fun, readFileOptions = { encoding: 'utf-8' }, inputIndex = 0, callbackIndex = -1) ->
+exports.stringToReadFile = (fun, readFileOptions = { encoding: 'utf-8' }, argIndex = 0, callbackIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
+    argIndex = negativeIndex(argIndex, args)
     callbackIndex = negativeIndex(callbackIndex, args)
 
-    fs.readFile args[inputIndex], readFileOptions, (err, content) ->
+    fs.readFile args[argIndex], readFileOptions, (err, content) ->
       if err? then return args[callbackIndex](err)
-      args[inputIndex] = content
+      args[argIndex] = content
       fun.apply(null, args)
 
 
-exports.input.filePathsToGlob = (fun, globOptions, inputIndex = 0, callbackIndex = -1) ->
+exports.readFilesToGlob = (fun, globOptions, argIndex = 0, callbackIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
+    argIndex = negativeIndex(argIndex, args)
     callbackIndex = negativeIndex(callbackIndex, args)
 
-    glob args[inputIndex], globOptions, (err, filePaths) ->
+    glob args[argIndex], globOptions, (err, filePaths) ->
       if err? then return args[callbackIndex](err)
-      args[inputIndex] = filePaths
+      args[argIndex] = filePaths
       fun.apply(null, args)
 
 
-exports.input.flatten = (fun, inputIndex = 0) ->
+exports.flatten = (fun, argIndex = 0) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
-    args[inputIndex] = _.flatten(args[inputIndex])
+    argIndex = negativeIndex(argIndex, args)
+    args[argIndex] = _.flatten(args[argIndex])
     fun.apply(null, args)
 
-exports.output.stringToFilePath = (fun, writeFileOptions, outputIndex = 1, callbackIndex = -1) ->
+exports.addArg = (fun, argIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    outputIndex = negativeIndex(outputIndex, args)
+    argIndex = negativeIndex(argIndex, args)
+
+    args.splice(argIndex, 1)
+    fun.apply(null, args)
+
+
+exports.stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, callbackIndex = -1) ->
+  funWithFilePathArg = exports.addArg(fun, newFilePathArgIndex)
+
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    newFilePathArgIndex = negativeIndex(newFilePathArgIndex, args)
     callbackIndex = negativeIndex(callbackIndex, args)
 
-    outFile = args[outputIndex]
+    outFile = args[newFilePathArgIndex]
     callback = args[callbackIndex]
 
     args[callbackIndex] = (err, result) ->
@@ -95,34 +103,34 @@ exports.output.stringToFilePath = (fun, writeFileOptions, outputIndex = 1, callb
           callback(null, outFile)
 
     #Call original function with new arguments
-    args.splice(outputIndex, 1)
+    funWithFilePathArg.apply(null, args)
+
+
+exports.stringToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    generatorParameterIndex = negativeIndex(generatorParameterIndex, args)
+    argIndex = negativeIndex(argIndex, args)
+
+    args[argIndex] = args[argIndex](args[generatorParameterIndex])
+    fun.apply(null, args)
+
+exports.appendExtension = (fun, extension, argIndex = 1) ->
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    argIndex = negativeIndex(argIndex, args)
+
+    args[argIndex] = args[argIndex] + '.' + extension
     fun.apply(null, args)
 
 
-exports.output.filePathToGenerated = (fun, inputIndex = 0, outputIndex = 1) ->
+exports.filePathToDirPath = (fun, argIndex = 1, inputFilePathIndex = 0) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
-    outputIndex = negativeIndex(outputIndex, args)
+    inputFilePathIndex = negativeIndex(inputFilePathIndex, args)
+    argIndex = negativeIndex(argIndex, args)
 
-    args[outputIndex] = args[outputIndex](args[inputIndex])
-    fun.apply(null, args)
-
-exports.output.filePathAppendExtension = (fun, extension, outputIndex = 1) ->
-  () ->
-    args = Array.prototype.slice.call(arguments)
-    outputIndex = negativeIndex(outputIndex, args)
-
-    args[outputIndex] = args[outputIndex] + '.' + extension
-    fun.apply(null, args)
-
-exports.output.filePathToDirPath = (fun, inputIndex = 0, outputIndex = 1) ->
-  () ->
-    args = Array.prototype.slice.call(arguments)
-    inputIndex = negativeIndex(inputIndex, args)
-    outputIndex = negativeIndex(outputIndex, args)
-
-    outputDirPath = args[outputIndex]
-    inputFilePath = args[inputIndex]
-    args[outputIndex] = path.join(outputDirPath, path.basename(inputFilePath))
+    outputDirPath = args[argIndex]
+    inputFilePath = args[inputFilePathIndex]
+    args[argIndex] = path.join(outputDirPath, path.basename(inputFilePath))
     fun.apply(null, args)

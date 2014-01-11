@@ -49,6 +49,16 @@ describe 'have-funs', ->
         expect(err).to.equal("someerror")
         done()
 
+    it 'allows the function to receive arguments other than the transformed one', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, append, cb) -> cb(null, vals[i] + append)
+      transformed = haveFun.singleToArray(f)
+      transformed [1,2,0], 'x', (err, results) ->
+        expect(err).to.be.not.ok
+        expect(results).to.eql(['bx', 'cx', 'ax'])
+        done()
+
+
   describe 'singleToArrayOrSingle()', ->
 
     it 'transforms a function which receives and outputs a single element into one which can also receive array', (done) ->
@@ -60,21 +70,30 @@ describe 'have-funs', ->
         expect(results).to.eql(['b', 'c', 'a'])
         done()
 
-    it 'allows the function to still receive a single element. the output will be an array of length 1', (done) ->
+    it 'allows the function to still receive a single element. the output will be a single element', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, cb) -> cb(null, vals[i])
       transformed = haveFun.singleToArrayOrSingle(f)
       transformed 2, (err, results) ->
         expect(err).to.be.not.ok
-        expect(results).to.eql(['c'])
+        expect(results).to.eql('c')
+        done()
+
+    it 'allows the function to receive arguments other than the transformed one', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, append, cb) -> cb(null, vals[i] + append)
+      transformed = haveFun.singleToArrayOrSingle(f)
+      transformed [1,2,0], 'x', (err, results) ->
+        expect(err).to.be.not.ok
+        expect(results).to.eql(['bx', 'cx', 'ax'])
         done()
 
 
-  describe 'input.stringToFilePath()', ->
+  describe 'stringToReadFile()', ->
 
     it 'transforms a function receiving a string to one receiving a file path to read', (done) ->
       f = (x, cb) -> cb(null, x.toUpperCase())
-      transformed = haveFun.input.stringToFilePath(f)
+      transformed = haveFun.stringToReadFile(f)
 
       transformed path.join(__dirname,'files/testdata.txt'), (err, result) ->
         expect(err).to.be.not.ok
@@ -83,7 +102,7 @@ describe 'have-funs', ->
 
     it 'receives options for readFile', (done) ->
       f = (x, cb) -> cb(null, x.readInt8(0))
-      transformed = haveFun.input.stringToFilePath(f, { encoding: null })
+      transformed = haveFun.stringToReadFile(f, { encoding: null })
 
       transformed path.join(__dirname,'files/testdata.txt'), (err, result) ->
         expect(err).to.be.not.ok
@@ -92,19 +111,19 @@ describe 'have-funs', ->
 
     it 'throws error if file does not exist', (done) ->
       f = (x, cb) -> cb(null, x.toUpperCase())
-      transformed = haveFun.input.stringToFilePath(f)
+      transformed = haveFun.stringToReadFile(f)
 
       transformed path.join(__dirname,'unexisting_file'), (err, result) ->
         expect(err).to.be.ok
         expect(result).to.be.not.ok
         done()      
 
-  describe 'input.filePathsToGlob()', ->
+  describe 'readFileToGlob()', ->
 
-    f = haveFun.singleToArray(haveFun.input.stringToFilePath((x, cb) -> cb(null, x.toUpperCase())))
+    f = haveFun.singleToArray(haveFun.stringToReadFile((x, cb) -> cb(null, x.toUpperCase())))
 
     it 'transforms a function receiving a list of file paths into one receiving a glob', (done) ->
-      transformed = haveFun.input.filePathsToGlob(f)
+      transformed = haveFun.readFilesToGlob(f)
 
       transformed path.join(__dirname,'files/*globtest*'), (err, result) ->
         expect(err).to.be.not.ok
@@ -112,7 +131,7 @@ describe 'have-funs', ->
         done()
 
     it 'receives glob options', (done) ->
-      transformed = haveFun.input.filePathsToGlob(f, { dot: true })
+      transformed = haveFun.readFilesToGlob(f, { dot: true })
 
       transformed path.join(__dirname,'files/*globtest*'), (err, result) ->
         expect(err).to.be.not.ok
@@ -120,23 +139,32 @@ describe 'have-funs', ->
         done()
 
     it 'returns empty list if no matches occur', (done) ->
-      transformed = haveFun.input.filePathsToGlob(f)
+      transformed = haveFun.readFilesToGlob(f)
 
       transformed path.join(__dirname,'files/unexisting_file*'), (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([])
         done()
 
-  describe 'input.flatten()', ->
+  describe 'flatten()', ->
 
-    it 'flattens the input before calling the function', ->
+    it 'flattens the argument before calling the function', ->
       f = sinon.spy()
-      transformed = haveFun.input.flatten(f)
+      transformed = haveFun.flatten(f)
       transformed([[1,2],[3,4]])
       expect(f.firstCall.args[0]).to.eql([1,2,3,4])
 
 
-  describe 'output.stringToFilePath()', ->
+  describe 'addArg()', ->
+
+    it 'adds an argument to a function', ->
+      f = sinon.spy()
+      transformed = haveFun.addArg(f, -2) #Add argument before the last
+      transformed('a', 'b', 'c')
+      expect(f.firstCall.args).to.eql(['a', 'c'])
+
+
+  describe 'stringToWriteFile()', ->
 
     outfile = path.join(__dirname, "tmp/outfile.txt")
     beforeEach -> try fs.unlinkSync(outfile)
@@ -144,7 +172,7 @@ describe 'have-funs', ->
     it 'transforms function which outputs a string into one which writes it to a file and outputs the file path', (done) ->
       f = (input, cb) -> cb(null, input)
 
-      transformed = haveFun.output.stringToFilePath(f)
+      transformed = haveFun.stringToWriteFile(f)
       transformed "all done", outfile, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.equal(outfile)
@@ -155,7 +183,7 @@ describe 'have-funs', ->
     it 'throws error if cannot create folder', (done) ->
       f = (input, cb) -> cb(null, input)
 
-      transformed = haveFun.output.stringToFilePath(f)
+      transformed = haveFun.stringToWriteFile(f)
       transformed "all done", 'invaliddirnam|?e/hello', (err, result) ->
         console.log(err, result)
         expect(err).to.be.ok
@@ -166,39 +194,39 @@ describe 'have-funs', ->
     it 'throws error if cannot write file', (done) ->
       f = (input, cb) -> cb(null, input)
 
-      transformed = haveFun.output.stringToFilePath(f)
+      transformed = haveFun.stringToWriteFile(f)
       transformed "all done", 'tmp/invalidfilename*|?', (err, result) ->
         expect(err).to.be.ok
         done()
 
     
-  describe 'output.filePathToGenerated()', ->
+  describe 'stringToGenerated()', ->
     it 'transforms function which takes a file path to write into one which takes a function to generate the file path', () ->
       f = sinon.spy()
-      transformed = haveFun.output.filePathToGenerated(f)
+      transformed = haveFun.stringToGenerated(f)
       nameGenerator = (inputPath) -> "output/#{inputPath}"
       transformed('testpath.txt', nameGenerator)
       expect(f.firstCall.args[1]).to.equal('output/testpath.txt')
         
-  describe 'output.filePathAppendExtension()', ->
+  describe 'appendExtension()', ->
 
     it 'transforms function into one with an extension appended to a file path to write', () ->
       f = sinon.spy()
-      transformed = haveFun.output.filePathAppendExtension(f, 'js')
+      transformed = haveFun.appendExtension(f, 'js')
       transformed('input.coffee', 'output')
       expect(f.firstCall.args[1]).to.equal('output.js')
 
-  describe 'output.filePathToDirPath()', ->
+  describe 'filePathToDirPath()', ->
 
     it 'transforms a function which takes a file path to write into one which takes a folder', () ->
       f = sinon.spy()
-      transformed = haveFun.output.filePathToDirPath(f)
+      transformed = haveFun.filePathToDirPath(f)
       transformed('a', 'output')
       expect(f.firstCall.args[1]).to.equal(path.join('output', 'a'))
 
     it 'allows singleToArray to be used after it', (done) ->
       f = (input, callback) -> callback(null, input)
-      transformed = haveFun.singleToArray(haveFun.output.filePathToDirPath(haveFun.output.stringToFilePath(f)))
+      transformed = haveFun.singleToArray(haveFun.filePathToDirPath(haveFun.stringToWriteFile(f)))
       transformed ['firstfile', 'secondfile', 'thirdfile' ], path.join(__dirname, 'tmp', 'output'), (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.have.length(3)
