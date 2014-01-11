@@ -104,11 +104,12 @@ exports.output.filePathAppendExtension = (fun, extension, outputIndex = 1) ->
     fun.apply(null, args)
 
 exports.output.filePathToDirPath = (fun, inputIndex = 0, outputIndex = 1) ->
-  genFun = exports.output.filePathToGenerated(fun, inputIndex, outputIndex)
   () ->
     args = Array.prototype.slice.call(arguments)
+    inputIndex = negativeIndex(inputIndex, args)
     outputIndex = negativeIndex(outputIndex, args)
+    outputDirPath = args[outputIndex]
+    inputFilePath = args[inputIndex]
 
-    dirPath = args[outputIndex]
-    args[outputIndex] = (inputFile) -> path.join(dirPath, path.basename(inputFile))
-    genFun.apply(null, args)
+    args[outputIndex] = path.join(outputDirPath, path.basename(inputFilePath))
+    fun.apply(null, args)
