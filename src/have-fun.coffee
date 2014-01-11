@@ -108,8 +108,8 @@ exports.output.filePathToDirPath = (fun, inputIndex = 0, outputIndex = 1) ->
     args = Array.prototype.slice.call(arguments)
     inputIndex = negativeIndex(inputIndex, args)
     outputIndex = negativeIndex(outputIndex, args)
+
     outputDirPath = args[outputIndex]
     inputFilePath = args[inputIndex]
-
     args[outputIndex] = path.join(outputDirPath, path.basename(inputFilePath))
     fun.apply(null, args)
