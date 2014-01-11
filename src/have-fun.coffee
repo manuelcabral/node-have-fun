@@ -27,6 +27,7 @@ exports.singleToArray = (fun, argIndexes = [ 0 ], callbackIndex = -1) ->
     argIndexes = (negativeIndex(argIndex, args) for argIndex in argIndexes)
     callbackIndex = negativeIndex(callbackIndex, args)
 
+
     argsForCall = _.clone(args)
     callFunWithArgs = (input, callback) ->
       argsForCall[argIndexes[i]] = input[i] for i in [0..input.length]
@@ -118,7 +119,7 @@ exports.stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, cal
     newFilePathArgIndex = negativeIndex(newFilePathArgIndex, args)
     callbackIndex = negativeIndex(callbackIndex, args)
 
-    outFile = args[newFilePathArgIndex]
+    outFile = path.normalize(args[newFilePathArgIndex])
     callback = args[callbackIndex]
 
     args[callbackIndex] = (err, result) ->
@@ -132,17 +133,23 @@ exports.stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, cal
     funWithFilePathArg.apply(null, args)
 
 
-exports.argToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0) ->
+exports.argToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0, generatorParameterIsCollection = false) ->
   () ->
     args = Array.prototype.slice.call(arguments)
     generatorParameterIndex = negativeIndex(generatorParameterIndex, args)
     argIndex = negativeIndex(argIndex, args)
 
-    args[argIndex] = args[argIndex](args[generatorParameterIndex])
+    args[argIndex] =
+      if !generatorParameterIsCollection
+        args[argIndex](args[generatorParameterIndex])
+      else
+        _.map(args[generatorParameterIndex], (p) -> args[argIndex](p))
+
+
     fun.apply(null, args)
 
-exports.argToGeneratedOptional = (fun, argIndex = 1, generatorParameterIndex = 0) ->
-  funWithGenerated = exports.argToGenerated(fun, argIndex, generatorParameterIndex)
+exports.argToGeneratedOptional = (fun, argIndex = 1, generatorParameterIndex = 0, generatorParameterIsCollection = false) ->
+  funWithGenerated = exports.argToGenerated(fun, argIndex, generatorParameterIndex, generatorParameterIsCollection)
   () ->
     args = Array.prototype.slice.call(arguments)
     argIndex = negativeIndex(argIndex, args)

@@ -268,6 +268,13 @@ describe 'have-funs', ->
       transformed('testpath.txt', nameGenerator)
       expect(f.firstCall.args[1]).to.equal('output/testpath.txt')
 
+    it 'may run generator for each element of input parameter', ->
+      f = sinon.spy()
+      transformed = haveFun.argToGenerated(f, 1, 0, true)
+      nameGenerator = (inputPath) -> "output/#{inputPath}"
+      transformed([ 'testpath.txt', 'testpath2.txt' ], nameGenerator)
+      expect(f.firstCall.args[1]).to.eql(['output/testpath.txt', 'output/testpath2.txt'])
+
   describe 'argToGeneratedOptional()', ->
     it 'generates a function which can take a function to generate a non-function parameter', () ->
       spy = sinon.spy()
