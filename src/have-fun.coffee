@@ -16,7 +16,13 @@ exports.singleToArray = (fun, inputIndex = 0, callbackIndex = -1) ->
     inputIndex = negativeIndex(inputIndex, args)
     callbackIndex = negativeIndex(callbackIndex, args)
 
-    async.map(args[inputIndex], fun, args[callbackIndex])
+    argsForCall = _.clone(args)
+    callFunWithArgs = (input, callback) ->
+      argsForCall[inputIndex] = input
+      argsForCall[callbackIndex] = callback
+      fun.apply(null, argsForCall)
+
+    async.map(args[inputIndex], callFunWithArgs, args[callbackIndex])
 
 exports.singleToArrayOrSingle = (fun, inputIndex = 0, callbackIndex = -1) ->
   () ->
@@ -95,4 +101,14 @@ exports.output.filePathAppendExtension = (fun, extension, outputIndex = 1) ->
     outputIndex = negativeIndex(outputIndex, args)
 
     args[outputIndex] = args[outputIndex] + '.' + extension
-    fun.apply(null, args)  
+    fun.apply(null, args)
+
+exports.output.filePathToDirPath = (fun, inputIndex = 0, outputIndex = 1) ->
+  genFun = exports.output.filePathToGenerated(fun, inputIndex, outputIndex)
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    outputIndex = negativeIndex(outputIndex, args)
+
+    dirPath = args[outputIndex]
+    args[outputIndex] = (inputFile) -> path.join(dirPath, path.basename(inputFile))
+    genFun.apply(null, args)

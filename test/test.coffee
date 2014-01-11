@@ -156,7 +156,6 @@ describe 'have-funs', ->
 
     
   describe 'output.filePathToGenerated()', ->
-
     it 'transforms function which takes a file path to write into one which takes a function to generate the file path', () ->
       f = sinon.spy()
       transformed = haveFun.output.filePathToGenerated(f)
@@ -172,4 +171,24 @@ describe 'have-funs', ->
       transformed('input.coffee', 'output')
       expect(f.firstCall.args[1]).to.equal('output.js')
 
+  describe 'output.filePathToDirPath()', ->
 
+    it 'transforms a function which takes a file path to write into one which takes a folder', () ->
+      f = sinon.spy()
+      transformed = haveFun.output.filePathToDirPath(f)
+      transformed('a', 'output')
+      expect(f.firstCall.args[1]).to.equal(path.join('output', 'a'))
+
+    it 'allows singleToArray to be used after it', (done) ->
+      f = (input, callback) -> callback(null, input)
+      transformed = haveFun.singleToArray(haveFun.output.filePathToDirPath(haveFun.output.stringToFilePath(f)))
+      transformed ['firstfile', 'secondfile', 'thirdfile' ], path.join(__dirname, 'tmp', 'output'), (err, result) ->
+        expect(err).to.be.not.ok
+        expect(result).to.have.length(3)
+        expect(result).to.contain(path.join(__dirname, 'tmp', 'output', 'firstfile'))
+        expect(result).to.contain(path.join(__dirname, 'tmp', 'output', 'secondfile'))
+        expect(result).to.contain(path.join(__dirname, 'tmp', 'output', 'thirdfile'))
+        expect(fs.readFileSync(path.join(__dirname, 'tmp', 'output', 'firstfile'), { encoding: 'utf-8' })).to.equal("firstfile")
+        expect(fs.readFileSync(path.join(__dirname, 'tmp', 'output', 'secondfile'), { encoding: 'utf-8' })).to.equal("secondfile")
+        expect(fs.readFileSync(path.join(__dirname, 'tmp', 'output', 'thirdfile'), { encoding: 'utf-8' })).to.equal("thirdfile")
+        done()
