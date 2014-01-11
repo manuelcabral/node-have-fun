@@ -59,12 +59,12 @@ describe 'have-funs', ->
         done()
 
 
-  describe 'singleToArrayOrSingle()', ->
+  describe 'singleToArrayOptional()', ->
 
     it 'transforms a function which receives and outputs a single element into one which can also receive array', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, cb) -> cb(null, vals[i])
-      transformed = haveFun.singleToArrayOrSingle(f)
+      transformed = haveFun.singleToArrayOptional(f)
       transformed [1,2,0], (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql(['b', 'c', 'a'])
@@ -73,7 +73,7 @@ describe 'have-funs', ->
     it 'allows the function to still receive a single element. the output will be a single element', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, cb) -> cb(null, vals[i])
-      transformed = haveFun.singleToArrayOrSingle(f)
+      transformed = haveFun.singleToArrayOptional(f)
       transformed 2, (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql('c')
@@ -82,7 +82,7 @@ describe 'have-funs', ->
     it 'allows the function to receive arguments other than the transformed one', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, append, cb) -> cb(null, vals[i] + append)
-      transformed = haveFun.singleToArrayOrSingle(f)
+      transformed = haveFun.singleToArrayOptional(f)
       transformed [1,2,0], 'x', (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql(['bx', 'cx', 'ax'])
@@ -200,14 +200,28 @@ describe 'have-funs', ->
         done()
 
     
-  describe 'stringToGenerated()', ->
+  describe 'argToGenerated()', ->
     it 'transforms function which takes a file path to write into one which takes a function to generate the file path', () ->
       f = sinon.spy()
-      transformed = haveFun.stringToGenerated(f)
+      transformed = haveFun.argToGenerated(f)
       nameGenerator = (inputPath) -> "output/#{inputPath}"
       transformed('testpath.txt', nameGenerator)
       expect(f.firstCall.args[1]).to.equal('output/testpath.txt')
-        
+
+  describe 'argToGeneratedOptional()', ->
+    it 'generates a function which can take a function to generate a non-function parameter', () ->
+      spy = sinon.spy()
+      f = haveFun.argToGeneratedOptional(spy, 1, 0)
+      f("a", (input) -> input + "x")
+      expect(spy.firstCall.args).to.eql([ "a", "ax" ])
+
+    it 'can still receive the regular parameter', ->
+      spy = sinon.spy()
+      f = haveFun.argToGeneratedOptional(spy, 1, 0)
+      f("a", "bx")
+      expect(spy.firstCall.args).to.eql([ "a", "bx" ])
+
+
   describe 'appendExtension()', ->
 
     it 'transforms function into one with an extension appended to a file path to write', () ->

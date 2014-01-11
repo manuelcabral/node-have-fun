@@ -19,7 +19,6 @@ exports.syncToAsync = (fun, callbackIndex = -1) ->
         args[callbackIndex](e)
 
 
-
 exports.singleToArray = (fun, argIndex = 0, callbackIndex = -1) ->
   () ->
     args = Array.prototype.slice.call(arguments)
@@ -34,7 +33,7 @@ exports.singleToArray = (fun, argIndex = 0, callbackIndex = -1) ->
 
     async.map(args[argIndex], callFunWithArgs, args[callbackIndex])
 
-exports.singleToArrayOrSingle = (fun, argIndex = 0, callbackIndex = -1) ->
+exports.singleToArrayOptional = (fun, argIndex = 0, callbackIndex = -1) ->
   funWithArrayArg = exports.singleToArray(fun, argIndex, callbackIndex)
   () ->
     args = Array.prototype.slice.call(arguments)
@@ -106,7 +105,7 @@ exports.stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, cal
     funWithFilePathArg.apply(null, args)
 
 
-exports.stringToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0) ->
+exports.argToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0) ->
   () ->
     args = Array.prototype.slice.call(arguments)
     generatorParameterIndex = negativeIndex(generatorParameterIndex, args)
@@ -114,6 +113,15 @@ exports.stringToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0) ->
 
     args[argIndex] = args[argIndex](args[generatorParameterIndex])
     fun.apply(null, args)
+
+exports.argToGeneratedOptional = (fun, argIndex = 1, generatorParameterIndex = 0) ->
+  funWithGenerated = exports.argToGenerated(fun, argIndex, generatorParameterIndex)
+  () ->
+    args = Array.prototype.slice.call(arguments)
+    argIndex = negativeIndex(argIndex, args)
+
+    funToApply = if _.isFunction(args[argIndex]) then funWithGenerated else fun
+    funToApply.apply(null, args)
 
 exports.appendExtension = (fun, extension, argIndex = 1) ->
   () ->
