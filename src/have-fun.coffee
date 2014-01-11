@@ -19,27 +19,36 @@ exports.syncToAsync = (fun, callbackIndex = -1) ->
         args[callbackIndex](e)
 
 
-exports.singleToArray = (fun, argIndex = 0, callbackIndex = -1) ->
+exports.singleToArray = (fun, argIndexes = [ 0 ], callbackIndex = -1) ->
+  if !_.isArray(argIndexes) then argIndexes = [ argIndexes ]
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
+    argIndexes = (negativeIndex(argIndex, args) for argIndex in argIndexes)
     callbackIndex = negativeIndex(callbackIndex, args)
 
     argsForCall = _.clone(args)
     callFunWithArgs = (input, callback) ->
-      argsForCall[argIndex] = input
+      argsForCall[argIndexes[i]] = input[i] for i in [0..input.length]
       argsForCall[callbackIndex] = callback
       fun.apply(null, argsForCall)
 
-    async.map(args[argIndex], callFunWithArgs, args[callbackIndex])
+    argsToUse = (args[argIndex] for argIndex in argIndexes)
 
-exports.singleToArrayOptional = (fun, argIndex = 0, callbackIndex = -1) ->
-  funWithArrayArg = exports.singleToArray(fun, argIndex, callbackIndex)
+    if _.any(argsToUse, (a) -> a.length != argsToUse[0].length)
+      return args[callbackIndex](new Error("Arguments must be the same length"))
+
+    argsPerCall = _.zip(argsToUse)
+    async.map(argsPerCall, callFunWithArgs, args[callbackIndex])
+
+exports.singleToArrayOptional = (fun, argIndexes = 0, callbackIndex = -1) ->
+  if !_.isArray(argIndexes) then argIndexes = [ argIndexes ]
+  funWithArrayArg = exports.singleToArray(fun, argIndexes, callbackIndex)
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
+    argIndexes = (negativeIndex(argIndex, args) for argIndex in argIndexes)
+    argsToUse = (args[negativeIndex(argIndex, args)] for argIndex in argIndexes)
 
-    funToApply = if _.isArray(args[argIndex]) then funWithArrayArg else fun
+    funToApply = if _.any(argsToUse, _.isArray) then funWithArrayArg else fun
     funToApply.apply(null, args)
 
 

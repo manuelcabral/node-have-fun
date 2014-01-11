@@ -32,10 +32,10 @@ describe 'have-funs', ->
 
   describe 'singleToArray()', ->
 
-    it 'transforms a function which receives and outputs a single element into one which receives and outputs an array', (done) ->
+    it 'transforms a function which receives and outputs single elements into one which receives and outputs arrays', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, cb) -> cb(null, vals[i])
-      transformed = haveFun.singleToArray(f)
+      transformed = haveFun.singleToArray(f, 0, -1)
       transformed [1,2,0], (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql(['b', 'c', 'a'])
@@ -43,7 +43,7 @@ describe 'have-funs', ->
 
     it 'should callback with error if any of the functions does', (done) ->
       f = (error, cb) -> cb(error, !error)
-      transformed = haveFun.singleToArray(f)
+      transformed = haveFun.singleToArray(f, 0, -1)
 
       transformed [false,"someerror",false], (err) ->
         expect(err).to.equal("someerror")
@@ -52,28 +52,53 @@ describe 'have-funs', ->
     it 'allows the function to receive arguments other than the transformed one', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, append, cb) -> cb(null, vals[i] + append)
-      transformed = haveFun.singleToArray(f)
+      transformed = haveFun.singleToArray(f, 0, -1)
       transformed [1,2,0], 'x', (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql(['bx', 'cx', 'ax'])
         done()
 
+    it 'can receive multiple indexes', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, j, cb) -> cb(null, vals[i] + vals[j])
+      transformed = haveFun.singleToArray(f, [0, 1])
+      transformed [1,2,0], [2,1,0], (err, results) ->
+        expect(err).to.be.not.ok
+        expect(results).to.eql(['bc', 'cb', 'aa'])
+        done()
+
+    it 'throws error if argument lists have different lengths', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, j, cb) -> cb(null, vals[i] + vals[j])
+      transformed = haveFun.singleToArray(f, [0, 1])
+      transformed [1,2,0], [2,1], (err, results) ->
+        expect(err).to.be.ok
+        done()
 
   describe 'singleToArrayOptional()', ->
 
     it 'transforms a function which receives and outputs a single element into one which can also receive array', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, cb) -> cb(null, vals[i])
-      transformed = haveFun.singleToArrayOptional(f)
+      transformed = haveFun.singleToArrayOptional(f, 0, -1)
       transformed [1,2,0], (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql(['b', 'c', 'a'])
         done()
 
+    it 'can receive multiple indexes', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, j, cb) -> cb(null, vals[i] + vals[j])
+      transformed = haveFun.singleToArrayOptional(f, [0, 1])
+      transformed [1,2,0], [2,1,0], (err, results) ->
+        expect(err).to.be.not.ok
+        expect(results).to.eql(['bc', 'cb', 'aa'])
+        done()
+        
     it 'allows the function to still receive a single element. the output will be a single element', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, cb) -> cb(null, vals[i])
-      transformed = haveFun.singleToArrayOptional(f)
+      transformed = haveFun.singleToArrayOptional(f, 0, -1)
       transformed 2, (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql('c')
@@ -82,7 +107,7 @@ describe 'have-funs', ->
     it 'allows the function to receive arguments other than the transformed one', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, append, cb) -> cb(null, vals[i] + append)
-      transformed = haveFun.singleToArrayOptional(f)
+      transformed = haveFun.singleToArrayOptional(f, 0, -1)
       transformed [1,2,0], 'x', (err, results) ->
         expect(err).to.be.not.ok
         expect(results).to.eql(['bx', 'cx', 'ax'])
