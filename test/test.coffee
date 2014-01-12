@@ -75,6 +75,20 @@ describe 'have-funs', ->
         expect(err).to.be.ok
         done()
 
+    it 'should work without callback function', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, j, cb) -> cb(null, vals[i] + vals[j])
+      transformed = haveFun.singleToArray(f, [0, 1], 2)
+      transformed([1,2,0], [2,1, 0])
+      delay(10, -> done())
+
+    it.only 'should not crash without callback and invalid arguments', (done) ->
+      vals = [ 'a', 'b', 'c' ]
+      f = (i, j, cb) -> cb(null, vals[i] + vals[j])
+      transformed = haveFun.singleToArray(f, [0, 1], 2)
+      transformed([1,2,0], [2,1])
+      delay(10, -> done())
+
   describe 'singleToArrayOptional()', ->
 
     it 'transforms a function which receives and outputs a single element into one which can also receive array', (done) ->
