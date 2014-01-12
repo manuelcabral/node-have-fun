@@ -5,14 +5,11 @@ mkdirp = require('mkdirp')
 path = require('path')
 _ = require('lodash')
 
-negativeIndex = (i, arr) -> if i >= 0 then i else arr.length + i
-
 funs = {}
 
-funs.syncToAsync = (fun, callbackIndex = -1) ->
+funs.syncToAsync = (fun, callbackIndex) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    callbackIndex = negativeIndex(callbackIndex, args)
 
     async.nextTick ->
       try
@@ -22,12 +19,10 @@ funs.syncToAsync = (fun, callbackIndex = -1) ->
         args[callbackIndex](e)
 
 
-funs.singleToArray = (fun, argIndexes = [ 0 ], callbackIndex = -1) ->
+funs.singleToArray = (fun, argIndexes, callbackIndex) ->
   if !_.isArray(argIndexes) then argIndexes = [ argIndexes ]
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndexes = (negativeIndex(argIndex, args) for argIndex in argIndexes)
-    callbackIndex = negativeIndex(callbackIndex, args)
 
     doneCallback = args[callbackIndex] || (->)
 
@@ -45,23 +40,20 @@ funs.singleToArray = (fun, argIndexes = [ 0 ], callbackIndex = -1) ->
     argsPerCall = _.zip(argsToUse)
     async.map(argsPerCall, callFunWithArgs, doneCallback)
 
-funs.singleToArrayOptional = (fun, argIndexes = 0, callbackIndex = -1) ->
+funs.singleToArrayOptional = (fun, argIndexes, callbackIndex) ->
   if !_.isArray(argIndexes) then argIndexes = [ argIndexes ]
   funWithArrayArg = funs.singleToArray(fun, argIndexes, callbackIndex)
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndexes = (negativeIndex(argIndex, args) for argIndex in argIndexes)
-    argsToUse = (args[negativeIndex(argIndex, args)] for argIndex in argIndexes)
+    argsToUse = (args[argIndex] for argIndex in argIndexes)
 
     funToApply = if _.any(argsToUse, _.isArray) then funWithArrayArg else fun
     funToApply.apply(null, args)
 
 
-funs.stringToReadFile = (fun, readFileOptions = { encoding: 'utf-8' }, argIndex = 0, callbackIndex = -1) ->
+funs.stringToReadFile = (fun, argIndex, callbackIndex, readFileOptions = { encoding: 'utf-8' }) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
-    callbackIndex = negativeIndex(callbackIndex, args)
 
     fs.readFile args[argIndex], readFileOptions, (err, content) ->
       if err? then return args[callbackIndex](err)
@@ -69,11 +61,9 @@ funs.stringToReadFile = (fun, readFileOptions = { encoding: 'utf-8' }, argIndex 
       fun.apply(null, args)
 
 
-funs.readFilesToGlob = (fun, globOptions, argIndex = 0, callbackIndex = -1) ->
+funs.readFilesToGlob = (fun, argIndex, callbackIndex, globOptions) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
-    callbackIndex = negativeIndex(callbackIndex, args)
 
     glob args[argIndex], globOptions, (err, filePaths) ->
       if err? then return args[callbackIndex](err)
@@ -81,13 +71,11 @@ funs.readFilesToGlob = (fun, globOptions, argIndex = 0, callbackIndex = -1) ->
       fun.apply(null, args)
 
 
-globs = funs.singleToArrayOptional(glob)
+globs = funs.singleToArrayOptional(glob, 0, 2)
 
-funs.readFilesToGlobs = (fun, globOptions, argIndex = 0, callbackIndex = -1) ->
+funs.readFilesToGlobs = (fun, argIndex, callbackIndex, globOptions) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
-    callbackIndex = negativeIndex(callbackIndex, args)
 
     globs args[argIndex], globOptions, (err, filePaths) ->
       if err? then return args[callbackIndex](err)
@@ -97,36 +85,33 @@ funs.readFilesToGlobs = (fun, globOptions, argIndex = 0, callbackIndex = -1) ->
       fun.apply(null, args)
 
 
-funs.flattenArray = (fun, argIndex = 0) ->
+funs.flattenArray = (fun, argIndex) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
     if _.isArray(args[argIndex])
       args[argIndex] = _.flatten(args[argIndex])
     fun.apply(null, args)
 
-funs.addArg = (fun, argIndex = -1) ->
+funs.addArg = (fun, newArgIndex) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
 
-    args.splice(argIndex, 1)
+    args.splice(newArgIndex, 1)
     fun.apply(null, args)
 
 
-funs.stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, callbackIndex = -1) ->
+funs.stringToWriteFile = (fun, callbackIndex, newFilePathArgIndex, writeFileOptions) ->
   funWithFilePathArg = funs.addArg(fun, newFilePathArgIndex)
 
   () ->
     args = Array.prototype.slice.call(arguments)
-    newFilePathArgIndex = negativeIndex(newFilePathArgIndex, args)
-    callbackIndex = negativeIndex(callbackIndex, args)
+    if newFilePathArgIndex <= callbackIndex then (callbackIndex += 1)
 
     outFile = path.normalize(args[newFilePathArgIndex])
     callback = args[callbackIndex]
 
     args[callbackIndex] = (err, result) ->
-      mkdirp path.dirname(outFile), (err) ->
+      mkdirp path.dirname(outFile), (err, createdDir) ->
         if err then return callback(err)
         fs.writeFile outFile, result, writeFileOptions, (err) ->
           if err then return callback(err)
@@ -136,11 +121,9 @@ funs.stringToWriteFile = (fun, writeFileOptions, newFilePathArgIndex = 1, callba
     funWithFilePathArg.apply(null, args)
 
 
-funs.argToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0, generatorParameterIsCollection = false) ->
+funs.argToGenerated = (fun, argIndex, generatorParameterIndex, generatorParameterIsCollection = false) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    generatorParameterIndex = negativeIndex(generatorParameterIndex, args)
-    argIndex = negativeIndex(argIndex, args)
 
     args[argIndex] =
       if !generatorParameterIsCollection
@@ -151,29 +134,25 @@ funs.argToGenerated = (fun, argIndex = 1, generatorParameterIndex = 0, generator
 
     fun.apply(null, args)
 
-funs.argToGeneratedOptional = (fun, argIndex = 1, generatorParameterIndex = 0, generatorParameterIsCollection = false) ->
+funs.argToGeneratedOptional = (fun, argIndex, generatorParameterIndex, generatorParameterIsCollection = false) ->
   funWithGenerated = funs.argToGenerated(fun, argIndex, generatorParameterIndex, generatorParameterIsCollection)
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
 
     funToApply = if _.isFunction(args[argIndex]) then funWithGenerated else fun
     funToApply.apply(null, args)
 
-funs.appendExtension = (fun, extension, argIndex = 1) ->
+funs.appendExtension = (fun, extension, argIndex) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    argIndex = negativeIndex(argIndex, args)
 
     args[argIndex] = args[argIndex] + '.' + extension
     fun.apply(null, args)
 
 
-funs.filePathToDirPath = (fun, argIndex = 1, inputFilePathIndex = 0) ->
+funs.filePathToDirPath = (fun, argIndex, inputFilePathIndex) ->
   () ->
     args = Array.prototype.slice.call(arguments)
-    inputFilePathIndex = negativeIndex(inputFilePathIndex, args)
-    argIndex = negativeIndex(argIndex, args)
 
     outputDirPath = args[argIndex]
     inputFilePath = args[inputFilePathIndex]
