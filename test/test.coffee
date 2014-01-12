@@ -283,6 +283,17 @@ describe 'have-fun', ->
         expect(err).to.be.ok
         done()
 
+
+    it 'should work without callback', (done) ->
+      f = (input, cb) -> cb(null, input)
+
+      transformed = primitives.stringToWriteFile(f, 1, 1)
+      transformed("all done", outfile)
+      delay 50, () ->
+        expect(fs.readFileSync(outfile, { encoding: 'utf-8' })).to.equal("all done")
+        done()
+
+
     
   describe 'argToGenerated()', ->
     it 'transforms function which takes a file path to write into one which takes a function to generate the file path', () ->

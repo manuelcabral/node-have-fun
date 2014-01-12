@@ -114,7 +114,7 @@ exports.stringToWriteFile = (fun, callbackIndexBeforeNewIsAdded, newFilePathArgI
       else callbackIndexBeforeNewIsAdded
 
     outFile = path.normalize(args[newFilePathArgIndex])
-    callback = args[callbackIndex]
+    callback = args[callbackIndex] || (->)
 
     args[callbackIndex] = (err, result) ->
       mkdirp path.dirname(outFile), (err, createdDir) ->

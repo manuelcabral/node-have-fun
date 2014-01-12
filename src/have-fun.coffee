@@ -12,6 +12,10 @@ fromString.fileToFile = (stringToStringFun, inputArgumentIndex, callbackArgument
   stringToFileFun = fromString.stringToFile(stringToStringFun, callbackArgumentIndex)
   primitives.stringToReadFile(stringToFileFun, inputArgumentIndex, callbackArgumentIndex + 1)
 
+fromString.fileToDir = (stringToStringFun, extension, inputArgumentIndex, callbackArgumentIndex) ->
+  fileToFileFun = fromString.fileToFile(stringToStringFun, inputArgumentIndex, callbackArgumentIndex)
+  primitives.filePathToDirPath(primitives.appendExtension(fileToFileFun, extension, 1), 1, inputArgumentIndex)
+
 fromString.fileToString = (stringToStringFun, callbackArgumentIndex) ->
   primitives.stringToReadFile(stringToStringFun, inputArgumentIndex, callbackArgumentIndex)
 
