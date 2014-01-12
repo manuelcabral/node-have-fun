@@ -82,7 +82,7 @@ describe 'have-funs', ->
       transformed([1,2,0], [2,1, 0])
       delay(10, -> done())
 
-    it.only 'should not crash without callback and invalid arguments', (done) ->
+    it 'should not crash without callback and invalid arguments', (done) ->
       vals = [ 'a', 'b', 'c' ]
       f = (i, j, cb) -> cb(null, vals[i] + vals[j])
       transformed = haveFun.singleToArray(f, [0, 1], 2)
