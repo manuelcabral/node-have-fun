@@ -23,9 +23,9 @@ fromString.globsToStrings = (stringToStringFun, inputArgumentIndex, callbackArgu
   fileToStringFun = fromString.fileToString(stringToStringFun, callbackArgumentIndex)
   primitives.readFilesToGlobs(primitives.singleToArray(fileToStringFun, inputArgumentIndex, callbackArgumentIndex), inputArgumentIndex, callbackArgumentIndex)
 
-fromString.globsToFiles = (stringToStringFun, inputArgumentIndex, callbackArgumentIndex) ->
+fromString.filesToFiles = (stringToStringFun, inputArgumentIndex, callbackArgumentIndex) ->
   fileToFileFun = fromString.fileToFile(stringToStringFun, inputArgumentIndex, callbackArgumentIndex)
-  primitives.readFilesToGlobs(primitives.argToGeneratedOptional(primitives.singleToArray(fileToFileFun, [inputArgumentIndex, 1], callbackArgumentIndex + 1), 1, inputArgumentIndex, true), inputArgumentIndex, callbackArgumentIndex + 1)
+  primitives.argToGeneratedOptional(primitives.singleToArray(fileToFileFun, [inputArgumentIndex, 1], callbackArgumentIndex + 1), 1, inputArgumentIndex, true)
 
 fromString.globsToDir = (stringToStringFun, extension, inputArgumentIndex, callbackArgumentIndex) ->
   fileToFileFun = fromString.fileToFile(stringToStringFun, inputArgumentIndex, callbackArgumentIndex)
