@@ -166,6 +166,7 @@ describe 'have-fun', ->
         expect(result).to.be.not.ok
         done()      
 
+  ###
   describe 'readFilesToGlob()', ->
 
     upperCaseFun = (x, cb) -> cb(null, x.toUpperCase())
@@ -194,6 +195,7 @@ describe 'have-fun', ->
         expect(err).to.be.not.ok
         expect(result).to.eql([])
         done()
+  ###
 
   describe 'readFilesToGlobs()', ->
 

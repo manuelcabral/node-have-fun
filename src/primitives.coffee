@@ -65,25 +65,6 @@ exports.stringToReadFile = (fun, argIndex, callbackIndex, readFileOptions = { en
       fun.apply(null, args)
 
 
-exports.readFilesToGlob = (fun, argIndexBeforeNewIsAdded, callbackIndexBeforeNewIsAdded, globOptionsIndex) ->
-  funWithGlobOptionsArg = exports.addArg(fun, globOptionsIndex)
-
-  () ->
-    args = Array.prototype.slice.call(arguments)
-
-    argIndex = 
-      if globOptionsIndex <= argIndexBeforeNewIsAdded then argIndexBeforeNewIsAdded + 1
-      else argIndexBeforeNewIsAdded
-    callbackIndex = 
-      if globOptionsIndex <= callbackIndexBeforeNewIsAdded then callbackIndexBeforeNewIsAdded + 1
-      else callbackIndexBeforeNewIsAdded
-
-    glob args[argIndex], args[globOptionsIndex], (err, filePaths) ->
-      if err? then return args[callbackIndex](err)
-      args[argIndex] = filePaths
-      funWithGlobOptionsArg.apply(null, args)
-
-
 globs = exports.singleToArrayOptional(glob, 0, 2)
 
 exports.readFilesToGlobs = (fun, argIndexBeforeNewIsAdded, callbackIndexBeforeNewIsAdded, globOptionsIndex) ->
