@@ -65,28 +65,52 @@ exports.stringToReadFile = (fun, argIndex, callbackIndex, readFileOptions = { en
       fun.apply(null, args)
 
 
-exports.readFilesToGlob = (fun, argIndex, callbackIndex, globOptions) ->
+exports.readFilesToGlob = (fun, argIndexBeforeNewIsAdded, callbackIndexBeforeNewIsAdded, globOptionsIndex) ->
+  funWithGlobOptionsArg = exports.addArg(fun, globOptionsIndex)
+
   () ->
     args = Array.prototype.slice.call(arguments)
 
-    glob args[argIndex], globOptions, (err, filePaths) ->
+    argIndex = 
+      if globOptionsIndex <= argIndexBeforeNewIsAdded then argIndexBeforeNewIsAdded + 1
+      else argIndexBeforeNewIsAdded
+    callbackIndex = 
+      if globOptionsIndex <= callbackIndexBeforeNewIsAdded then callbackIndexBeforeNewIsAdded + 1
+      else callbackIndexBeforeNewIsAdded
+
+    glob args[argIndex], args[globOptionsIndex], (err, filePaths) ->
       if err? then return args[callbackIndex](err)
       args[argIndex] = filePaths
-      fun.apply(null, args)
+      funWithGlobOptionsArg.apply(null, args)
 
 
 globs = exports.singleToArrayOptional(glob, 0, 2)
 
-exports.readFilesToGlobs = (fun, argIndex, callbackIndex, globOptions) ->
+exports.readFilesToGlobs = (fun, argIndexBeforeNewIsAdded, callbackIndexBeforeNewIsAdded, globOptionsIndex) ->
+  funWithGlobOptionsArg = exports.addArg(fun, globOptionsIndex)
+
   () ->
     args = Array.prototype.slice.call(arguments)
 
-    globs args[argIndex], globOptions, (err, filePaths) ->
+    argIndex = 
+      if globOptionsIndex <= argIndexBeforeNewIsAdded then argIndexBeforeNewIsAdded + 1
+      else argIndexBeforeNewIsAdded
+    callbackIndex = 
+      if globOptionsIndex <= callbackIndexBeforeNewIsAdded then callbackIndexBeforeNewIsAdded + 1
+      else callbackIndexBeforeNewIsAdded
+
+    globs args[argIndex], args[globOptionsIndex], (err, filePaths) ->
       if err? then return args[callbackIndex](err)
       if _.isArray(filePaths) then filePaths = _.flatten(filePaths)
       filePaths = _.uniq(filePaths)
+      filePaths = _.map filePaths, (p) -> path.join(args[globOptionsIndex]?.cwd || '', p)
+      
+      if args[globOptionsIndex]?.cwd
+        filePaths = _.map filePaths, (p) -> { cwd: args[globOptionsIndex].cwd, path: path.relative(args[globOptionsIndex].cwd, p) }
+
       args[argIndex] = filePaths
-      fun.apply(null, args)
+
+      funWithGlobOptionsArg.apply(null, args)
 
 
 exports.flattenArray = (fun, argIndex) ->
@@ -162,5 +186,12 @@ exports.filePathToDirPath = (fun, argIndex, inputFilePathIndex) ->
 
     outputDirPath = args[argIndex]
     inputFilePath = args[inputFilePathIndex]
-    args[argIndex] = path.join(outputDirPath, path.basename(inputFilePath))
+
+    args[inputFilePathIndex] =
+    if inputFilePath.cwd
+      path.join(inputFilePath.cwd, inputFilePath.path)
+    else
+      inputFilePath
+    
+    args[argIndex] = path.join(outputDirPath, inputFilePath.path)
     fun.apply(null, args)

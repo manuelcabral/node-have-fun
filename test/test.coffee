@@ -172,25 +172,25 @@ describe 'have-fun', ->
     f = primitives.singleToArray(primitives.stringToReadFile(upperCaseFun, 0, 1), 0, 1)
 
     it 'transforms a function receiving a list of file paths into one receiving a glob', (done) ->
-      transformed = primitives.readFilesToGlob(f, 0, 1)
+      transformed = primitives.readFilesToGlob(f, 0, 1, 1)
 
-      transformed path.join(__dirname,'files/*globtest*'), (err, result) ->
+      transformed path.join(__dirname,'files/*globtest*'), {}, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
         done()
 
     it 'receives glob options', (done) ->
-      transformed = primitives.readFilesToGlob(f, 0, 1, { dot: true })
+      transformed = primitives.readFilesToGlob(f, 0, 1, 1)
 
-      transformed path.join(__dirname,'files/*globtest*'), (err, result) ->
+      transformed path.join(__dirname,'files/*globtest*'), { dot: true }, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([ 'HIDDENGLOBDATA', 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
         done()
 
     it 'returns empty list if no matches occur', (done) ->
-      transformed = primitives.readFilesToGlob(f, 0, 1)
+      transformed = primitives.readFilesToGlob(f, 0, 1, 1)
 
-      transformed path.join(__dirname,'files/unexisting_file*'), (err, result) ->
+      transformed path.join(__dirname,'files/unexisting_file*'), {}, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([])
         done()
@@ -201,26 +201,26 @@ describe 'have-fun', ->
     f = primitives.singleToArray(primitives.stringToReadFile(upperCaseFun, 0, 1), 0, 1)
 
     it 'transforms a function receiving a list of file paths into one receiving a list of globs', (done) ->
-      transformed = primitives.readFilesToGlobs(f, 0, 1)
+      transformed = primitives.readFilesToGlobs(f, 0, 1, 1)
 
-      transformed [ path.join(__dirname,'files/*globtest1*'), path.join(__dirname,'files/*globtest2*') ], (err, result) ->
+      transformed [ path.join(__dirname,'files/*globtest1*'), path.join(__dirname,'files/*globtest2*') ], {}, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
         done()
 
     it 'can still receive a single glob', (done) ->
-      transformed = primitives.readFilesToGlobs(f, 0, 1)
+      transformed = primitives.readFilesToGlobs(f, 0, 1, 1)
 
-      transformed path.join(__dirname,'files/*globtest*'), (err, result) ->
+      transformed path.join(__dirname,'files/*globtest*'), {}, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
         done()
 
 
     it 'should only process each file once when it is matched by two globs', (done) ->
-      transformed = primitives.readFilesToGlobs(f, 0, 1)
+      transformed = primitives.readFilesToGlobs(f, 0, 1, 1)
 
-      transformed [ path.join(__dirname,'files/*globtest*'), path.join(__dirname,'files/*globtest2*') ], (err, result) ->
+      transformed [ path.join(__dirname,'files/*globtest*'), path.join(__dirname,'files/*globtest2*') ], {}, (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.eql([ 'GLOBTESTDATA', 'MOREGLOBTESTDATA'])
         done()
@@ -337,13 +337,13 @@ describe 'have-fun', ->
     it 'transforms a function which takes a file path to write into one which takes a folder', () ->
       f = sinon.spy()
       transformed = primitives.filePathToDirPath(f, 1, 0)
-      transformed('a', 'output')
+      transformed({ cwd: 'b', path: 'a' }, 'output' )
       expect(f.firstCall.args[1]).to.equal(path.join('output', 'a'))
 
     it 'allows singleToArray to be used after it', (done) ->
       f = (input, callback) -> callback(null, input)
       transformed = primitives.singleToArray(primitives.filePathToDirPath(primitives.stringToWriteFile(f), 1, 0), 0, 2)
-      transformed ['firstfile', 'secondfile', 'thirdfile' ], path.join(__dirname, 'tmp', 'output'), (err, result) ->
+      transformed [{ path: 'firstfile', cwd: 'b' }, { path: 'secondfile', cwd: 'b' }, { path: 'thirdfile', cwd: 'b' } ], path.join(__dirname, 'tmp', 'output'), (err, result) ->
         expect(err).to.be.not.ok
         expect(result).to.have.length(3)
         expect(result).to.contain(path.join(__dirname, 'tmp', 'output', 'firstfile'))

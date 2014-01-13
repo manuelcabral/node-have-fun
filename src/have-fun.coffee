@@ -21,7 +21,7 @@ fromString.fileToString = (stringToStringFun, callbackArgumentIndex) ->
 
 fromString.globsToStrings = (stringToStringFun, inputArgumentIndex, callbackArgumentIndex) ->
   fileToStringFun = fromString.fileToString(stringToStringFun, callbackArgumentIndex)
-  primitives.readFilesToGlobs(primitives.singleToArray(fileToStringFun, inputArgumentIndex, callbackArgumentIndex), inputArgumentIndex, callbackArgumentIndex)
+  primitives.readFilesToGlobs(primitives.singleToArray(fileToStringFun, inputArgumentIndex, callbackArgumentIndex), inputArgumentIndex, callbackArgumentIndex, 1)
 
 fromString.filesToFiles = (stringToStringFun, inputArgumentIndex, callbackArgumentIndex) ->
   fileToFileFun = fromString.fileToFile(stringToStringFun, inputArgumentIndex, callbackArgumentIndex)
@@ -29,7 +29,7 @@ fromString.filesToFiles = (stringToStringFun, inputArgumentIndex, callbackArgume
 
 fromString.globsToDir = (stringToStringFun, extension, inputArgumentIndex, callbackArgumentIndex) ->
   fileToFileFun = fromString.fileToFile(stringToStringFun, inputArgumentIndex, callbackArgumentIndex)
-  primitives.readFilesToGlobs(primitives.singleToArray(primitives.filePathToDirPath(primitives.appendExtension(fileToFileFun, extension, 1), 1, inputArgumentIndex), inputArgumentIndex, callbackArgumentIndex + 1), inputArgumentIndex, callbackArgumentIndex + 1)
+  primitives.readFilesToGlobs(primitives.singleToArray(primitives.filePathToDirPath(primitives.appendExtension(fileToFileFun, extension, 1), 1, inputArgumentIndex), inputArgumentIndex, callbackArgumentIndex + 1), inputArgumentIndex, callbackArgumentIndex + 1, 1)
 
 # For the sync version, one must replace the first argument (the function) by it's asynchronous version
 # We tell `syncToAsync` to add the callback argument to the end
