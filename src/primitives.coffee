@@ -168,11 +168,13 @@ exports.filePathToDirPath = (fun, argIndex, inputFilePathIndex) ->
     outputDirPath = args[argIndex]
     inputFilePath = args[inputFilePathIndex]
 
-    args[inputFilePathIndex] =
-    if inputFilePath.cwd
-      path.join(inputFilePath.cwd, inputFilePath.path)
-    else
-      inputFilePath
     
-    args[argIndex] = path.join(outputDirPath, inputFilePath.path)
+    if inputFilePath.cwd
+      args[inputFilePathIndex] = path.join(inputFilePath.cwd, inputFilePath.path)
+      args[argIndex] = path.join(outputDirPath, inputFilePath.path)
+    else
+      args[inputFilePathIndex] = inputFilePath
+      args[argIndex] = path.join(outputDirPath, path.basename(inputFilePath))
+    
+
     fun.apply(null, args)
